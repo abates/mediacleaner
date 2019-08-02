@@ -9,6 +9,7 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/mh-orange/vfs"
@@ -132,86 +133,130 @@ func watch(fs vfs.FileSystem, root string, events <-chan vfs.Event, jobQueue cha
 			}
 		}
 	}
-	close(jobQueue)
 }
 
-func process(scanQueue, watchQueue <-chan Job) {
-	scanOpen := true
-	watchOpen := true
-
-	for scanOpen || watchOpen {
-		var job Job
-		open := true
+func (p *Process) process(queue <-chan Job) {
+	errChs := []chan error{}
+	watchers := []vfs.Watcher{}
+	done := false
+	for !done {
 		select {
-		case job, open = <-scanQueue:
+		case job, open := <-queue:
 			if !open {
-				scanOpen = false
+				done = true
 				continue
 			}
-		case job, open = <-watchQueue:
-			if !open {
-				watchOpen = false
-				continue
+			err := job.Check()
+			if err == nil {
+				err = job.Execute()
+				if err != nil {
+					Logger.Printf("Failed to process %s: %v", job.Name(), err)
+				}
+			} else if _, ok := err.(*CheckError); !ok {
+				Logger.Printf("Failed to perform checks on %s: %v", job.Name(), err)
 			}
+		case errCh := <-p.killCh:
+			errChs = append(errChs, errCh)
+			for _, watcher := range watchers {
+				err := watcher.Close()
+				if err != nil {
+					Logger.Printf("Failed to close logger: %v", err)
+				}
+			}
+			watchers = nil
+		case watcher := <-p.watcherCh:
+			watchers = append(watchers, watcher)
 		}
+	}
 
-		err := job.Check()
-		if err == nil {
-			err = job.Execute()
-			if err != nil {
-				Logger.Printf("Failed to process %s: %v", job.Name(), err)
-			}
-		} else if _, ok := err.(*CheckError); !ok {
-			Logger.Printf("Failed to perform checks on %s: %v", job.Name(), err)
-		}
+	for _, errCh := range errChs {
+		errCh <- nil
 	}
 }
 
-func init() {
-	flag.BoolVar(&QuietFlag, "q", false, "quiet - hide the progress bar")
-	flag.BoolVar(&ScanFlag, "s", false, "scan - scan directories and process the files")
-	flag.BoolVar(&WatchFlag, "w", false, "watch - watch for changes to the filesystem and process newly created files")
+// Kill a currently running watch process, this terminates any
+// filesystem watchers that are set up
+func (p *Process) Kill() (err error) {
+	wait := make(chan error)
+	p.killCh <- wait
+	return <-wait
 }
 
-func Run(cb FileCallback) {
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options] <dir1> <dir2> ...\n\nOptions:\n", os.Args[0])
-		flag.PrintDefaults()
+// Wait for the process to complete
+func (p *Process) Wait() {
+	p.pwg.Wait()
+}
+
+type Process struct {
+	killCh    chan chan error
+	watcherCh chan vfs.Watcher
+	pwg       sync.WaitGroup
+	wg        sync.WaitGroup
+}
+
+func Run(args []string, cb FileCallback) *Process {
+	name := args[0]
+	flags := flag.NewFlagSet(name, flag.ExitOnError)
+	flags.BoolVar(&QuietFlag, "q", false, "quiet - hide the progress bar")
+	flags.BoolVar(&ScanFlag, "s", false, "scan - scan directories and process the files")
+	flags.BoolVar(&WatchFlag, "w", false, "watch - watch for changes to the filesystem and process newly created files")
+	flags.Usage = func() {
+		fmt.Fprintf(flags.Output(), "Usage: %s [options] <dir1> <dir2> ...\n\nOptions:\n", name)
+		flags.PrintDefaults()
 	}
 
-	flag.Parse()
-	args := flag.Args()
-
+	flags.Parse(args[1:])
+	args = flags.Args()
 	if len(args) < 1 {
-		flag.Usage()
+		flags.Usage()
 		os.Exit(1)
 	}
 
-	var scanQueue chan Job
-	var watchQueue chan Job
+	p := &Process{
+		killCh:    make(chan chan error),
+		watcherCh: make(chan vfs.Watcher),
+	}
+	queue := make(chan Job)
+	events := make(chan vfs.Event, 16384)
+
+	p.pwg.Add(1)
+	Logger.Printf("Starting processing thread")
+	go func() {
+		p.process(queue)
+		p.pwg.Done()
+	}()
 
 	for _, path := range args {
 		fs := vfs.NewOsFs(path)
 		if ScanFlag {
-			scanQueue = make(chan Job)
 			Logger.Printf("Scanning %q", path)
+			p.wg.Add(1)
 			go func(fs vfs.FileSystem) {
-				vfs.Walk(fs, "/", walk(fs, path, scanQueue, cb))
-				close(scanQueue)
+				vfs.Walk(fs, "/", walk(fs, path, queue, cb))
+				p.wg.Done()
 			}(fs)
 		}
 
 		if WatchFlag {
-			watchQueue = make(chan Job)
-			go func(fs vfs.FileSystem) {
-				events := make(chan vfs.Event, 16384)
-				vfs.Watch(fs, "/", events)
-				Logger.Printf("Watching %q", path)
-				watch(fs, path, events, watchQueue, cb)
-			}(fs)
+			p.wg.Add(1)
+			watcher, err := vfs.Watch(fs, "/", events)
+			if err == nil {
+				p.watcherCh <- watcher
+				go func(fs vfs.FileSystem) {
+					Logger.Printf("Watching %q", path)
+					watch(fs, path, events, queue, cb)
+					p.wg.Done()
+				}(fs)
+			} else {
+				Logger.Printf("Failed to start watch: %v", err)
+			}
 		}
 	}
 
-	Logger.Printf("Starting processing thread")
-	process(scanQueue, watchQueue)
+	go func() {
+		p.wg.Wait()
+		close(queue)
+	}()
+
+	return p
 }

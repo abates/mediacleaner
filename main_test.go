@@ -2,10 +2,14 @@ package mediacleaner
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -135,6 +139,7 @@ func TestSkip(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
+
 			info, _ := fs.Stat(test.input)
 			got := skip(info, test.input)
 			if test.want != got {
@@ -218,14 +223,18 @@ func TestWatch(t *testing.T) {
 		event        vfs.Event
 		job          Job
 		wantQueueLen int
-		want         []string
+		wantLog      string
 	}{
-		{"stat error", vfs.Event{Path: "/foo", Type: vfs.CreateEvent}, nil, 0, []string{}},
-		{"skip directory", vfs.Event{Path: "/", Type: vfs.CreateEvent}, nil, 0, []string{}},
+		{"stat error", vfs.Event{Path: "/foo", Type: vfs.CreateEvent}, nil, 0, "error when trying to stat newly created file \"/foo\": no such file or directory\n"},
+		{"skip directory", vfs.Event{Path: "/", Type: vfs.CreateEvent}, nil, 0, ""},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			builder := &strings.Builder{}
+			oldLogger := Logger
+			Logger = log.New(builder, "", 0)
+			defer func() { Logger = oldLogger }()
 			jobQueue := make(chan Job, 1)
 			events := make(chan vfs.Event, 1)
 			events <- test.event
@@ -237,12 +246,14 @@ func TestWatch(t *testing.T) {
 				got = append(got, filename)
 				return test.job
 			})
-			if !reflect.DeepEqual(test.want, got) {
-				t.Errorf("Want %s got %s", test.want, got)
-			}
 
 			if len(jobQueue) != test.wantQueueLen {
 				t.Errorf("Wanted %d items in the job queue, got %d", test.wantQueueLen, len(jobQueue))
+			}
+
+			gotLog := builder.String()
+			if test.wantLog != gotLog {
+				t.Errorf("Wanted log %q got %q", test.wantLog, gotLog)
 			}
 		})
 	}
@@ -264,20 +275,20 @@ func TestProcess(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			builder := &strings.Builder{}
+			oldLogger := Logger
 			Logger = log.New(builder, "", 0)
 			fs := vfs.NewMemFs()
 			defer fs.Close()
-			scanQueue := make(chan Job, 1)
-			watchQueue := make(chan Job, 1)
+			queue := make(chan Job, 1)
 			if test.scanJob != nil {
-				scanQueue <- test.scanJob
+				queue <- test.scanJob
 			}
 			if test.watchJob != nil {
-				watchQueue <- test.watchJob
+				queue <- test.watchJob
 			}
-			close(scanQueue)
-			close(watchQueue)
-			process(scanQueue, watchQueue)
+			close(queue)
+			p := &Process{}
+			p.process(queue)
 			if test.scanJob != nil && test.wantScanExecute != test.scanJob.execute {
 				t.Errorf("Wanted scan execute to be %v got %v", test.wantScanExecute, test.scanJob.execute)
 			}
@@ -288,6 +299,70 @@ func TestProcess(t *testing.T) {
 			if test.wantLogMsg != gotLogMsg {
 				t.Errorf("Wanted log message %q got %q", test.wantLogMsg, gotLogMsg)
 			}
+			Logger = oldLogger
 		})
+	}
+}
+
+func TestRunScan(t *testing.T) {
+	builder := &strings.Builder{}
+	oldLogger := Logger
+	Logger = log.New(builder, "", 0)
+	defer func() { Logger = oldLogger }()
+
+	tempdir, _ := ioutil.TempDir("", "osfs_test")
+	defer os.RemoveAll(tempdir)
+	os.MkdirAll(filepath.Join(tempdir, "/foo/bar"), 0750)
+	want := []string{"/foo/bar/done.txt"}
+	os.Create(filepath.Join(tempdir, want[0]))
+	got := []string{}
+	p := Run([]string{"foo", "-s", tempdir}, func(fs vfs.FileSystem, filename string, root string) Job {
+		got = append(got, filename)
+		return nil
+	})
+	p.Wait()
+	sort.Strings(got)
+	wantLog := fmt.Sprintf("Starting processing thread\nScanning %q\n", tempdir)
+	gotLog := builder.String()
+	if wantLog != gotLog {
+		t.Errorf("Wanted log %q got %q", wantLog, gotLog)
+	}
+
+	if !reflect.DeepEqual(want, got) {
+		t.Errorf("Wanted %s to be scanned but got %s", want, got)
+	}
+}
+
+func TestRunWatch(t *testing.T) {
+	builder := &strings.Builder{}
+	oldLogger := Logger
+	Logger = log.New(builder, "", 0)
+	defer func() { Logger = oldLogger }()
+	tempdir, _ := ioutil.TempDir("", "osfs_test")
+	defer os.RemoveAll(tempdir)
+
+	done := make(chan bool)
+	want := "/foo/bar/done.txt"
+	os.MkdirAll(filepath.Join(tempdir, "/foo/bar"), 0750)
+	p := Run([]string{"foo", "-w", tempdir}, func(fs vfs.FileSystem, filename string, root string) Job {
+		if filename != want {
+			t.Errorf("Wanted %q got %q", want, filename)
+		}
+		done <- true
+		return nil
+	})
+
+	os.Create(filepath.Join(tempdir, want))
+	<-done
+	err := p.Kill()
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	p.Wait()
+
+	wantLog := fmt.Sprintf("Starting processing thread\nWatching %q\n", tempdir)
+	gotLog := builder.String()
+	if wantLog != gotLog {
+		t.Errorf("Wanted log %q got %q", wantLog, gotLog)
 	}
 }
