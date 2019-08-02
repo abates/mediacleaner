@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path"
 	"testing"
 
 	"github.com/abates/mediacleaner"
@@ -20,7 +21,7 @@ func TestJobCheck(t *testing.T) {
 		{"/2010/02", "", "", errNoFile},
 		{"/noexif.png", "", "", errNoExif},
 		{"/nodate.png", "", "", errNoExifDate},
-		{"/IMG_20130525_125511_332.jpg", "/2013/05", "2013_05_25_12:55:11_0000", nil},
+		{"/IMG_20130525_125511_332.jpg", "/2013/05", "2013_05_25_12:55:11_0000.jpg", nil},
 	}
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
@@ -38,6 +39,51 @@ func TestJobCheck(t *testing.T) {
 
 					if test.wantNewFilename != jb.newFilename {
 						t.Errorf("Wanted newFilename %q got %q", test.wantNewFilename, jb.newFilename)
+					}
+				}
+			} else {
+				t.Errorf("Wanted error %v got %v", test.wantErr, gotErr)
+			}
+		})
+	}
+}
+
+func TestJobExecute(t *testing.T) {
+	tests := []struct {
+		filename        string
+		wantNewFilename string
+		wantErr         error
+	}{
+		{"/IMG_20130525_125511_332.jpg", "/2013/05/2013_05_25_12:55:11_0000.jpg", nil},
+	}
+	for _, test := range tests {
+		t.Run(test.filename, func(t *testing.T) {
+			fs := vfs.NewTempFs()
+			defer fs.Close()
+			fs.Create(test.filename)
+			jb := &job{
+				fs:          fs,
+				filename:    test.filename,
+				newFilename: path.Base(test.wantNewFilename),
+				newDir:      path.Dir(test.wantNewFilename),
+			}
+			gotErr := jb.Execute()
+			if ce, ok := gotErr.(*mediacleaner.ExecuteError); ok {
+				gotErr = ce.Cause
+			}
+
+			if test.wantErr == gotErr {
+				if gotErr == nil {
+					if _, err := fs.Stat(path.Dir(test.wantNewFilename)); err != nil {
+						t.Errorf("Wanted directory to exist got %v", err)
+					}
+
+					if _, err := fs.Stat(test.wantNewFilename); err != nil {
+						t.Errorf("Wanted file to have been renamed, got %v", err)
+					}
+
+					if _, err := fs.Stat(test.filename); !vfs.IsNotExist(err) {
+						t.Errorf("Wanted file to have been renamed, got %v", err)
 					}
 				}
 			} else {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -35,7 +36,8 @@ var (
 
 	ErrUnknownDateFormat = errors.New("Unknown date format")
 
-	Logger = log.New(os.Stderr, "", log.LstdFlags)
+	Output = io.Writer(os.Stderr)
+	Logger *log.Logger
 )
 
 type CheckError struct {
@@ -192,6 +194,10 @@ type Process struct {
 	watcherCh chan vfs.Watcher
 	pwg       sync.WaitGroup
 	wg        sync.WaitGroup
+}
+
+func init() {
+	Logger = log.New(Output, "", log.LstdFlags)
 }
 
 func Run(args []string, cb FileCallback) *Process {

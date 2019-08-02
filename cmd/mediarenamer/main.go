@@ -54,13 +54,16 @@ func (jb *job) Check() error {
 	jb.newDir = t.Format("/2006/01")
 
 	jb.newFilename, err = mediacleaner.GetPrefix(jb.fs, jb.newDir, jb.newFilename)
+	if err == nil {
+		jb.newFilename = fmt.Sprintf("%s%s", jb.newFilename, strings.ToLower(path.Ext(jb.filename)))
+	}
 	return err
 }
 
 func (jb *job) Execute() error {
 	err := mediacleaner.WrapExecuteError(fmt.Sprintf("failed creating directory %q", jb.newDir), vfs.MkdirAll(jb.fs, jb.newDir, 0750))
 	if err == nil {
-		newFilename := path.Join(jb.newDir, fmt.Sprintf("%s%s", jb.newFilename, strings.ToLower(path.Ext(jb.filename))))
+		newFilename := path.Join(jb.newDir, jb.newFilename)
 		err = mediacleaner.WrapExecuteError(fmt.Sprintf("failed to rename %q to %q", jb.filename, newFilename), jb.fs.Rename(jb.filename, newFilename))
 		if err == nil {
 			jb.filename = newFilename

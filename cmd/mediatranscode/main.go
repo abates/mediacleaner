@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path"
 
@@ -42,7 +41,7 @@ func (jb *job) Check() error {
 func (jb *job) Execute() error {
 	input := path.Join(jb.root, jb.filename)
 	if !mediacleaner.QuietFlag {
-		log.Printf("Transcoding %q", jb.filename)
+		mediacleaner.Logger.Printf("Transcoding %q", jb.filename)
 	}
 	output := input[0 : len(input)-len(path.Ext(input))]
 	output = fmt.Sprintf("%s.mp4", output)
@@ -51,6 +50,7 @@ func (jb *job) Execute() error {
 	if err == nil {
 		if !mediacleaner.QuietFlag {
 			bar := pb.New(0)
+			bar.Output = mediacleaner.Output
 			for info := range proc.Progress() {
 				if bar.Total == 0 {
 					bar.Total = int64(info.Duration)
@@ -58,6 +58,7 @@ func (jb *job) Execute() error {
 				}
 				bar.Set64(int64(info.Time))
 			}
+			bar.Set64(bar.Total)
 			bar.Finish()
 		}
 		err = proc.Wait()
