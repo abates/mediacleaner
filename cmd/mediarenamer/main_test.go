@@ -19,6 +19,7 @@ func TestJobCheck(t *testing.T) {
 	}{
 		{"/2010/01", "", "", errIsDir},
 		{"/2010/02", "", "", errNoFile},
+		{"/2010/01/2010_01_13_22:01:37_0000.jpg", "", "", errAlreadyProcessed},
 		{"/noexif.png", "", "", errNoExif},
 		{"/nodate.png", "", "", errNoExifDate},
 		{"/IMG_20130525_125511_332.jpg", "/2013/05", "2013_05_25_12:55:11_0000.jpg", nil},

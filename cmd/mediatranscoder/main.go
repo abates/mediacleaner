@@ -15,6 +15,7 @@ import (
 var (
 	errAlreadyMp4 = errors.New("file is already an mp4 file")
 	errNotVideo   = errors.New("file doesn't appear to be a video file")
+	errNotRenamed = errors.New("will only transcode files that have been named correctly (/YYYY/MM/YYYY_MM_DD_HH:MM:SS_xxxx.ext)")
 )
 
 type job struct {
@@ -28,6 +29,11 @@ func (jb *job) Name() string {
 }
 
 func (jb *job) Check() error {
+	// only convert files that have already been named correctly
+	if !mediacleaner.CleanName.Match([]byte(jb.filename)) {
+		return &mediacleaner.CheckError{errNotRenamed}
+	}
+
 	// convert video files to mp4's that can be pretty much played anywhere
 	if path.Ext(jb.filename) == ".mp4" {
 		return &mediacleaner.CheckError{errAlreadyMp4}

@@ -21,9 +21,9 @@ func TestJobCheck(t *testing.T) {
 		filename string
 		wantErr  error
 	}{
-		{"test1.mp4", errAlreadyMp4},
-		{"test2.jpg", errNotVideo},
-		{"test3.mpg", nil},
+		{"/2010/01/2010_01_01_00:00:00_0001.mp4", errAlreadyMp4},
+		{"/2010/01/2010_01_01_00:00:00_0002.jpg", errNotVideo},
+		{"/2010/01/2010_01_01_00:00:00_0003.mpg", nil},
 	}
 
 	for _, test := range tests {
@@ -50,11 +50,12 @@ func TestJobExecute(t *testing.T) {
 	fs := vfs.NewOsFs(tempdir)
 	defer fs.Close()
 
-	files, _ := filepath.Glob("testdata/*")
-	for _, filename := range files {
-		in, err := os.Open(filename)
-		if err == nil {
-			out, err := fs.Create(filepath.Base(filename))
+	filepath.Walk("testdata", func(inpath string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			outpath := strings.TrimPrefix(inpath, "testdata")
+			vfs.MkdirAll(fs, filepath.Dir(outpath), 0750)
+			in, _ := os.Open(inpath)
+			out, err := fs.Create(outpath)
 			if err == nil {
 				io.Copy(out, in)
 				in.Close()
@@ -64,10 +65,9 @@ func TestJobExecute(t *testing.T) {
 			} else {
 				panic(err.Error())
 			}
-		} else {
-			panic(err.Error())
 		}
-	}
+		return err
+	})
 
 	tests := []struct {
 		filename        string
@@ -75,8 +75,8 @@ func TestJobExecute(t *testing.T) {
 		wantLog         string
 		wantErr         string
 	}{
-		{"test3.mpg", "test3.mp4", "Transcoding \"test3.mpg\"\n", ""},
-		{"test4.txt.gz", "", "Transcoding \"test4.txt.gz\"\n", fmt.Sprintf("%v/test4.txt.gz: Invalid data found when processing input", tempdir)},
+		{"/2010/01/2010_01_01_00:00:00_0003.mpg", "/2010/01/2010_01_01_00:00:00_0003.mp4", "Transcoding \"/2010/01/2010_01_01_00:00:00_0003.mpg\"\n", ""},
+		{"/2010/01/2010_01_01_00:00:00_0004.txt.gz", "", "Transcoding \"/2010/01/2010_01_01_00:00:00_0004.txt.gz\"\n", fmt.Sprintf("%v/2010/01/2010_01_01_00:00:00_0004.txt.gz: Invalid data found when processing input", tempdir)},
 	}
 
 	for _, test := range tests {

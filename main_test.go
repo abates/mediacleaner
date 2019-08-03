@@ -125,7 +125,6 @@ func TestSkip(t *testing.T) {
 	fs := vfs.NewTempFs()
 	defer fs.Close()
 	vfs.MkdirAll(fs, "/2010/01", 0755)
-	fs.Create("/2010/01/2010_01_10_06:57:48_0000.jpg")
 	fs.Create("foo.jpg")
 
 	tests := []struct {
@@ -133,7 +132,6 @@ func TestSkip(t *testing.T) {
 		want  bool
 	}{
 		{"/", true},
-		{"/2010/01/2010_01_10_06:57:48_0000.jpg", true},
 		{"foo.jpg", false},
 	}
 
@@ -305,6 +303,9 @@ func TestProcess(t *testing.T) {
 }
 
 func TestRunScan(t *testing.T) {
+	ScanFlag = false
+	WatchFlag = false
+
 	builder := &strings.Builder{}
 	oldLogger := Logger
 	Logger = log.New(builder, "", 0)
@@ -334,6 +335,9 @@ func TestRunScan(t *testing.T) {
 }
 
 func TestRunWatch(t *testing.T) {
+	ScanFlag = false
+	WatchFlag = false
+
 	builder := &strings.Builder{}
 	oldLogger := Logger
 	Logger = log.New(builder, "", 0)

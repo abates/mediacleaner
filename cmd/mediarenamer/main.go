@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	errNoFile     = errors.New("File removed prior to processing")
-	errIsDir      = errors.New("File is a directory")
-	errNoExif     = errors.New("File has no exif data")
-	errNoExifDate = errors.New("Exif data has no known date")
+	errNoFile           = errors.New("File removed prior to processing")
+	errIsDir            = errors.New("File is a directory")
+	errNoExif           = errors.New("File has no exif data")
+	errNoExifDate       = errors.New("Exif data has no known date")
+	errAlreadyProcessed = errors.New("File has already been processed")
 )
 
 type job struct {
@@ -36,6 +37,10 @@ func (jb *job) Check() error {
 		return &mediacleaner.CheckError{errNoFile}
 	} else if fi.IsDir() {
 		return &mediacleaner.CheckError{errIsDir}
+	}
+
+	if mediacleaner.CleanName.Match([]byte(jb.filename)) {
+		return &mediacleaner.CheckError{errAlreadyProcessed}
 	}
 
 	t, err := mediacleaner.GetDateFromFilename(jb.filename)

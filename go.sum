@@ -14,6 +14,8 @@ github.com/mh-orange/cmd v0.0.0-20190207214143-df53bd8d1c5c h1:Eco7VcM3O/Os1EPnY
 github.com/mh-orange/cmd v0.0.0-20190207214143-df53bd8d1c5c/go.mod h1:ak0+965HQ8cjjOMALzYW2RxMSDL7DiX1LadhjfqmeiY=
 github.com/mh-orange/ffmpeg v0.0.0-20190723212204-33cd97fc2750 h1:rq4Fb7FIQi+VikBT6856nW/33312L/bZdVqfUxO1RCk=
 github.com/mh-orange/ffmpeg v0.0.0-20190723212204-33cd97fc2750/go.mod h1:3kcO+ICu2mfdMDCg/gql0i3+Inber6zA/eyv9aKK918=
+github.com/mh-orange/ffmpeg v0.0.0-20190802193410-7dffbb2b0cde h1:0Qb5EqiWdk1Qzmv7qEUyEJBH9jNYRiKkaTyd0N7bxZ0=
+github.com/mh-orange/ffmpeg v0.0.0-20190802193410-7dffbb2b0cde/go.mod h1:3kcO+ICu2mfdMDCg/gql0i3+Inber6zA/eyv9aKK918=
 github.com/mh-orange/vfs v0.0.0-20190802160435-3c572b2c1ee3 h1:starygELIxDlZU6BIcmKhEbPi8xxBN1crs5v90c+plU=
 github.com/mh-orange/vfs v0.0.0-20190802160435-3c572b2c1ee3/go.mod h1:W++dVrVLUvtgr77GRaiP3kx7LbKl0p/cQcHFWPMxifA=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=

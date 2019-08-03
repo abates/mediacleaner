@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	SkipName   = regexp.MustCompile(`^\/\d{4}\/\d{2}\/\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`)
+	CleanName  = regexp.MustCompile(`^\/\d{4}\/\d{2}\/\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`)
 	DirPrefix  = regexp.MustCompile(`^\/\d{4}\/\d{2}`)
 	FilePrefix = regexp.MustCompile(`^\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`)
 
@@ -38,6 +38,8 @@ var (
 
 	Output = io.Writer(os.Stderr)
 	Logger *log.Logger
+
+	Flags = flag.NewFlagSet("", flag.ExitOnError)
 )
 
 type CheckError struct {
@@ -101,10 +103,6 @@ func WrapExecuteError(msg string, err error) error {
 
 func skip(info os.FileInfo, filename string) bool {
 	if info.IsDir() {
-		return true
-	}
-
-	if SkipName.Match([]byte(filename)) {
 		return true
 	}
 	return false
@@ -198,23 +196,20 @@ type Process struct {
 
 func init() {
 	Logger = log.New(Output, "", log.LstdFlags)
+
+	Flags.BoolVar(&QuietFlag, "q", false, "quiet - hide the progress bar")
+	Flags.BoolVar(&ScanFlag, "s", false, "scan - scan directories and process the files")
+	Flags.BoolVar(&WatchFlag, "w", false, "watch - watch for changes to the filesystem and process newly created files")
+	Flags.Usage = func() {
+		fmt.Fprintf(Flags.Output(), "Usage: %s [options] <dir1> <dir2> ...\n\nOptions:\n", os.Args[0])
+		Flags.PrintDefaults()
+	}
 }
 
 func Run(args []string, cb FileCallback) *Process {
-	name := args[0]
-	flags := flag.NewFlagSet(name, flag.ExitOnError)
-	flags.BoolVar(&QuietFlag, "q", false, "quiet - hide the progress bar")
-	flags.BoolVar(&ScanFlag, "s", false, "scan - scan directories and process the files")
-	flags.BoolVar(&WatchFlag, "w", false, "watch - watch for changes to the filesystem and process newly created files")
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: %s [options] <dir1> <dir2> ...\n\nOptions:\n", name)
-		flags.PrintDefaults()
-	}
-
-	flags.Parse(args[1:])
-	args = flags.Args()
-	if len(args) < 1 {
-		flags.Usage()
+	Flags.Parse(args[1:])
+	if len(Flags.Args()) < 1 {
+		Flags.Usage()
 		os.Exit(1)
 	}
 
@@ -232,7 +227,7 @@ func Run(args []string, cb FileCallback) *Process {
 		p.pwg.Done()
 	}()
 
-	for _, path := range args {
+	for _, path := range Flags.Args() {
 		fs := vfs.NewOsFs(path)
 		if ScanFlag {
 			Logger.Printf("Scanning %q", path)
