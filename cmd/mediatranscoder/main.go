@@ -73,7 +73,8 @@ func (jb *job) Execute() error {
 }
 
 func main() {
-	mediacleaner.Run(os.Args, func(fs vfs.FileSystem, filename string, root string) mediacleaner.Job {
+	p := mediacleaner.Run(os.Args, func(fs vfs.FileSystem, filename string, root string) mediacleaner.Job {
 		return &job{fs: fs, root: root, filename: filename}
 	})
+	p.Wait()
 }
