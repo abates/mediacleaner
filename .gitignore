@@ -4,7 +4,8 @@
 *.dll
 *.so
 *.dylib
-mediacleaner
+cmd/mediatranscoder/mediatranscoder
+cmd/mediarenamer/mediarenamer
 
 # Test binary, build with `go test -c`
 *.test
