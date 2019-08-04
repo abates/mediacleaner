@@ -42,6 +42,16 @@ var (
 	Flags = flag.NewFlagSet("", flag.ExitOnError)
 )
 
+func Errorf(format string, args ...interface{}) {
+	Logger.Printf(format, args...)
+}
+
+func Infof(format string, args ...interface{}) {
+	if !QuietFlag {
+		Logger.Printf(format, args...)
+	}
+}
+
 type CheckError struct {
 	Cause error
 }
@@ -129,7 +139,7 @@ func watch(fs vfs.FileSystem, root string, events <-chan vfs.Event, jobQueue cha
 			info, err := fs.Stat(event.Path)
 			err = walkFn(event.Path, info, err)
 			if err != nil {
-				Logger.Printf("error when trying to stat newly created file %q: %v", event.Path, err)
+				Errorf("error when trying to stat newly created file %q: %v", event.Path, err)
 			}
 		}
 	}
@@ -150,17 +160,17 @@ func (p *Process) process(queue <-chan Job) {
 			if err == nil {
 				err = job.Execute()
 				if err != nil {
-					Logger.Printf("Failed to process %s: %v", job.Name(), err)
+					Errorf("Failed to process %s: %v", job.Name(), err)
 				}
 			} else if _, ok := err.(*CheckError); !ok {
-				Logger.Printf("Failed to perform checks on %s: %v", job.Name(), err)
+				Errorf("Failed to perform checks on %s: %v", job.Name(), err)
 			}
 		case errCh := <-p.killCh:
 			errChs = append(errChs, errCh)
 			for _, watcher := range watchers {
 				err := watcher.Close()
 				if err != nil {
-					Logger.Printf("Failed to close logger: %v", err)
+					Errorf("Failed to close watcher: %v", err)
 				}
 			}
 			watchers = nil
@@ -221,7 +231,7 @@ func Run(args []string, cb FileCallback) *Process {
 	events := make(chan vfs.Event, 16384)
 
 	p.pwg.Add(1)
-	Logger.Printf("Starting processing thread")
+	Infof("Starting processing thread")
 	go func() {
 		p.process(queue)
 		p.pwg.Done()
@@ -230,7 +240,7 @@ func Run(args []string, cb FileCallback) *Process {
 	for _, path := range Flags.Args() {
 		fs := vfs.NewOsFs(path)
 		if ScanFlag {
-			Logger.Printf("Scanning %q", path)
+			Infof("Scanning %q", path)
 			p.wg.Add(1)
 			go func(fs vfs.FileSystem) {
 				vfs.Walk(fs, "/", walk(fs, path, queue, cb))
@@ -244,12 +254,12 @@ func Run(args []string, cb FileCallback) *Process {
 			if err == nil {
 				p.watcherCh <- watcher
 				go func(fs vfs.FileSystem) {
-					Logger.Printf("Watching %q", path)
+					Infof("Watching %q", path)
 					watch(fs, path, events, queue, cb)
 					p.wg.Done()
 				}(fs)
 			} else {
-				Logger.Printf("Failed to start watch: %v", err)
+				Errorf("Failed to start watch: %v", err)
 			}
 		}
 	}

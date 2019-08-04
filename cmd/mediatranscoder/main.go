@@ -47,7 +47,7 @@ func (jb *job) Check() error {
 func (jb *job) Execute() error {
 	input := path.Join(jb.root, jb.filename)
 	if !mediacleaner.QuietFlag {
-		mediacleaner.Logger.Printf("Transcoding %q", jb.filename)
+		mediacleaner.Infof("Transcoding %q", jb.filename)
 	}
 	output := input[0 : len(input)-len(path.Ext(input))]
 	output = fmt.Sprintf("%s.mp4", output)
