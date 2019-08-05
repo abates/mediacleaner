@@ -30,7 +30,13 @@ func (jb *job) Name() string {
 
 func (jb *job) Check() error {
 	// only convert files that have already been named correctly
-	if !mediacleaner.CleanName.Match([]byte(jb.filename)) {
+	dir := []byte(path.Dir(jb.filename))
+	if mediacleaner.YearMonthDir.Match(dir) || mediacleaner.YearMonthDayDir.Match(dir) {
+		fn := []byte(path.Base(jb.filename))
+		if !mediacleaner.FilePrefix.Match(fn) {
+			return &mediacleaner.CheckError{errNotRenamed}
+		}
+	} else {
 		return &mediacleaner.CheckError{errNotRenamed}
 	}
 

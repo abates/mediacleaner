@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	CleanName  = regexp.MustCompile(`^\/\d{4}\/\d{2}\/\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`)
-	DirPrefix  = regexp.MustCompile(`^\/\d{4}\/\d{2}`)
-	FilePrefix = regexp.MustCompile(`^\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`)
+	YearMonthDir    = regexp.MustCompile(`^\/\d{4}\/\d{2}`)
+	YearMonthDayDir = regexp.MustCompile(`^\/\d{4}\/\d{2}\/\d{2}`)
+	FilePrefix      = regexp.MustCompile(`^\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`)
 
 	filePrefixes = map[*regexp.Regexp]string{
 		regexp.MustCompile(`^\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`):     "2006_01_02_15:04:05",
@@ -162,7 +162,9 @@ func (p *Process) process(queue <-chan Job) {
 				if err != nil {
 					Errorf("Failed to process %s: %v", job.Name(), err)
 				}
-			} else if _, ok := err.(*CheckError); !ok {
+			} else if _, ok := err.(*CheckError); ok {
+				Infof("Skipping %s: %v", job.Name(), err)
+			} else {
 				Errorf("Failed to perform checks on %s: %v", job.Name(), err)
 			}
 		case errCh := <-p.killCh:

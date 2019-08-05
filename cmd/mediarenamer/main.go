@@ -39,8 +39,12 @@ func (jb *job) Check() error {
 		return &mediacleaner.CheckError{errIsDir}
 	}
 
-	if mediacleaner.CleanName.Match([]byte(jb.filename)) {
-		return &mediacleaner.CheckError{errAlreadyProcessed}
+	dir := []byte(path.Dir(jb.filename))
+	if mediacleaner.YearMonthDir.Match(dir) || mediacleaner.YearMonthDayDir.Match(dir) {
+		fn := []byte(path.Base(jb.filename))
+		if mediacleaner.FilePrefix.Match(fn) {
+			return &mediacleaner.CheckError{errAlreadyProcessed}
+		}
 	}
 
 	t, err := mediacleaner.GetDateFromFilename(jb.filename)
