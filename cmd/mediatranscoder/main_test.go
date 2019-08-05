@@ -21,9 +21,13 @@ func TestJobCheck(t *testing.T) {
 		filename string
 		wantErr  error
 	}{
+		{"/2010_01_01_00:00:00_0001.mov", errNotRenamed},
+		{"/2010/2010_01_01_00:00:00_0001.mov", errNotRenamed},
 		{"/2010/01/2010_01_01_00:00:00_0001.mp4", errAlreadyMp4},
 		{"/2010/01/2010_01_01_00:00:00_0002.jpg", errNotVideo},
 		{"/2010/01/2010_01_01_00:00:00_0003.mpg", nil},
+		{"/2010/01/foo.mpg", errNotRenamed},
+		{"/2010/01/01/2010_01_01_00:00:00_0003.mpg", nil},
 	}
 
 	for _, test := range tests {
