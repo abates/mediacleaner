@@ -15,7 +15,7 @@ import (
 var (
 	errNoFile           = errors.New("File removed prior to processing")
 	errIsDir            = errors.New("File is a directory")
-	errNoExif           = errors.New("File has no exif data")
+	errNoExif           = errors.New("Exiftool could not read file")
 	errNoExifDate       = errors.New("Exif data has no known date")
 	errAlreadyProcessed = errors.New("File has already been processed")
 )
