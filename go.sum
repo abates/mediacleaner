@@ -38,6 +38,8 @@ github.com/mh-orange/ffmpeg v0.0.0-20190805120148-2bfd4665211b h1:lqQJ0xjSKgFhde
 github.com/mh-orange/ffmpeg v0.0.0-20190805120148-2bfd4665211b/go.mod h1:3kcO+ICu2mfdMDCg/gql0i3+Inber6zA/eyv9aKK918=
 github.com/mh-orange/ffmpeg v0.0.0-20191031143514-263295278388 h1:8+6JBMgkxmk7Fkd9mdRYTQjjrMFmICoGtatE7Y2bQNY=
 github.com/mh-orange/ffmpeg v0.0.0-20191031143514-263295278388/go.mod h1:3kcO+ICu2mfdMDCg/gql0i3+Inber6zA/eyv9aKK918=
+github.com/mh-orange/ffmpeg v0.0.0-20191101143614-56bfe8c58b8e h1:zOf9gQZn4PQgv8PdD0hQAjRdQSqZX+YCppB/n16+MDM=
+github.com/mh-orange/ffmpeg v0.0.0-20191101143614-56bfe8c58b8e/go.mod h1:3kcO+ICu2mfdMDCg/gql0i3+Inber6zA/eyv9aKK918=
 github.com/mh-orange/vfs v0.0.0-20190802160435-3c572b2c1ee3 h1:starygELIxDlZU6BIcmKhEbPi8xxBN1crs5v90c+plU=
 github.com/mh-orange/vfs v0.0.0-20190802160435-3c572b2c1ee3/go.mod h1:W++dVrVLUvtgr77GRaiP3kx7LbKl0p/cQcHFWPMxifA=
 github.com/mitchellh/gox v1.0.1 h1:x0jD3dcHk9a9xPSDN6YEL4xL6Qz0dvNYm8yZqui5chI=

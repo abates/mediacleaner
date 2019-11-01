@@ -16,6 +16,46 @@ import (
 	"github.com/mh-orange/vfs"
 )
 
+func readFile(t *testing.T, filename, ext string) []byte {
+	for ext := filepath.Ext(filename); len(ext) > 0; ext = filepath.Ext(filename) {
+		filename = filename[0 : len(filename)-len(ext)]
+	}
+
+	content := []byte{}
+	filename = fmt.Sprintf("testdata%s.%s", filename, ext)
+	if _, err := os.Stat(filename); err == nil {
+		content, err = ioutil.ReadFile(filename)
+		if err != nil {
+			t.Logf("Failed to read file %q: %v", filename, err)
+		}
+	}
+
+	return content
+}
+
+func mockCmd(t *testing.T, input string) func() {
+	oldFfprobe := ffmpeg.Ffprobe
+	oldFfmpeg := ffmpeg.Ffmpeg
+
+	ffm := &cmd.TestCmd{
+		Stdout: readFile(t, input, "ffmpeg"),
+		Stderr: readFile(t, input, "ffmpeg_err"),
+	}
+
+	ffp := &cmd.TestCmd{
+		Stdout: readFile(t, input, "ffprobe"),
+		Stderr: readFile(t, input, "ffprobe_err"),
+	}
+
+	ffmpeg.Ffmpeg = ffm
+	ffmpeg.Ffprobe = ffp
+
+	return func() {
+		ffmpeg.Ffmpeg = oldFfmpeg
+		ffmpeg.Ffprobe = oldFfprobe
+	}
+}
+
 func TestJobCheck(t *testing.T) {
 	fs := vfs.NewOsFs("testdata")
 	defer fs.Close()
@@ -34,6 +74,7 @@ func TestJobCheck(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
+			defer mockCmd(t, test.filename)()
 			jb := &job{fs: fs, root: "testdata/", filename: test.filename}
 			gotErr := jb.Check()
 			if ce, ok := gotErr.(*mediacleaner.CheckError); ok {
@@ -86,20 +127,12 @@ func TestJobExecute(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
+			defer mockCmd(t, test.filename)()
 			builder := &strings.Builder{}
 			oldLogger := mediacleaner.Logger
 			mediacleaner.Logger = log.New(builder, "", 0)
 			defer func() { mediacleaner.Logger = oldLogger }()
 			mediacleaner.Output = ioutil.Discard
-
-			oldFfmpeg := ffmpeg.Ffmpeg
-			ffmpeg.Ffmpeg = &cmd.TestCmd{
-				Stderr: []byte(test.wantErr),
-			}
-
-			defer func() {
-				ffmpeg.Ffmpeg = oldFfmpeg
-			}()
 
 			jb := &job{
 				fs:       fs,
