@@ -63,7 +63,7 @@ func TestJobCheck(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
-			outfile := fmt.Sprintf("testdata/%s.out", test.filename[0:len(test.filename)-len(filepath.Ext(test.filename))])
+			outfile := fmt.Sprintf("testdata/%s.ffprobe", test.filename[0:len(test.filename)-len(filepath.Ext(test.filename))])
 			if _, err := os.Stat(outfile); err == nil {
 				goexiftool.ExifTool = fakeExiftool(outfile)
 				defer func() { goexiftool.ExifTool = nil }()
