@@ -56,18 +56,16 @@ type CheckError struct {
 	Cause error
 }
 
-func (err *CheckError) Error() string {
-	return err.Cause.Error()
-}
+func (err *CheckError) Unwrap() error { return err.Cause }
+func (err *CheckError) Error() string { return "job check failed" }
 
 type ExecuteError struct {
 	Msg   string
 	Cause error
 }
 
-func (err *ExecuteError) Error() string {
-	return fmt.Sprintf("%s: %v", err.Msg, err.Cause)
-}
+func (err *ExecuteError) Unwrap() error { return err.Cause }
+func (err *ExecuteError) Error() string { return fmt.Sprintf("job execution failed: %s", err.Msg) }
 
 type Job interface {
 	Name() string
@@ -102,13 +100,6 @@ func GetPrefix(fs vfs.FileSystem, dirname, prefix string) (string, error) {
 		prefix = fmt.Sprintf("%s_0000", prefix)
 	}
 	return prefix, err
-}
-
-func WrapExecuteError(msg string, err error) error {
-	if err != nil {
-		err = &ExecuteError{Msg: msg, Cause: err}
-	}
-	return err
 }
 
 func skip(info os.FileInfo, filename string) bool {
@@ -149,6 +140,7 @@ func (p *Process) process(queue <-chan Job) {
 	errChs := []chan error{}
 	watchers := []vfs.Watcher{}
 	done := false
+	ce := &CheckError{}
 	for !done {
 		select {
 		case job, open := <-queue:
@@ -162,7 +154,7 @@ func (p *Process) process(queue <-chan Job) {
 				if err != nil {
 					Errorf("Failed to process %s: %v", job.Name(), err)
 				}
-			} else if _, ok := err.(*CheckError); ok {
+			} else if errors.As(err, &ce) {
 				Infof("Skipping %s: %v", job.Name(), err)
 			} else {
 				Errorf("Failed to perform checks on %s: %v", job.Name(), err)

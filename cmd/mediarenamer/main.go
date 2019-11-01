@@ -15,7 +15,6 @@ import (
 var (
 	errNoFile           = errors.New("File removed prior to processing")
 	errIsDir            = errors.New("File is a directory")
-	errNoExif           = errors.New("Exiftool could not read file")
 	errNoExifDate       = errors.New("Exif data has no known date")
 	errAlreadyProcessed = errors.New("File has already been processed")
 )
@@ -51,7 +50,7 @@ func (jb *job) Check() error {
 	if err != nil {
 		exif, err := goexiftool.NewMediaFile(path.Join(jb.root, jb.filename))
 		if err != nil {
-			return &mediacleaner.CheckError{errNoExif}
+			return &mediacleaner.CheckError{err}
 		}
 
 		t, err = exif.GetDate()
@@ -70,13 +69,17 @@ func (jb *job) Check() error {
 }
 
 func (jb *job) Execute() error {
-	err := mediacleaner.WrapExecuteError(fmt.Sprintf("failed creating directory %q", jb.newDir), vfs.MkdirAll(jb.fs, jb.newDir, 0750))
+	err := vfs.MkdirAll(jb.fs, jb.newDir, 0750)
 	if err == nil {
 		newFilename := path.Join(jb.newDir, jb.newFilename)
-		err = mediacleaner.WrapExecuteError(fmt.Sprintf("failed to rename %q to %q", jb.filename, newFilename), jb.fs.Rename(jb.filename, newFilename))
+		err = jb.fs.Rename(jb.filename, newFilename)
 		if err == nil {
 			jb.filename = newFilename
+		} else {
+			err = &mediacleaner.ExecuteError{fmt.Sprintf("failed to rename %q to %q", jb.filename, newFilename), err}
 		}
+	} else {
+		err = &mediacleaner.ExecuteError{fmt.Sprintf("failed creating directory %q", jb.newDir), err}
 	}
 	return err
 }
