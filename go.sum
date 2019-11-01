@@ -12,6 +12,8 @@ github.com/abates/goexiftool v0.0.0-20191031122028-c5d870626b21 h1:btM/V3CEwqrgS
 github.com/abates/goexiftool v0.0.0-20191031122028-c5d870626b21/go.mod h1:aHlx0GOUaaagt9XW6o+Il1Mp6MMaOHpSHYsXgUyQPbM=
 github.com/abates/goexiftool v0.0.0-20191031123245-19a21faad4d0 h1:rFPy/TaSollTPc5PXPDow9epoNtpq17dq7874j65GNo=
 github.com/abates/goexiftool v0.0.0-20191031123245-19a21faad4d0/go.mod h1:aHlx0GOUaaagt9XW6o+Il1Mp6MMaOHpSHYsXgUyQPbM=
+github.com/abates/goexiftool v0.0.0-20191101174916-139ad7211501 h1:LS2kC5dBoIk1JPTcWcNl5v5dn2p1ph9RpmsnQB5cdPk=
+github.com/abates/goexiftool v0.0.0-20191101174916-139ad7211501/go.mod h1:aHlx0GOUaaagt9XW6o+Il1Mp6MMaOHpSHYsXgUyQPbM=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
