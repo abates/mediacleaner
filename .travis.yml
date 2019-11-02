@@ -12,11 +12,11 @@ before_install:
 script:
 - go test -coverprofile=coverage.out -coverpkg=./,./cmd/... ./...
 - "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"
-- GIT_TAG=$(git describe --tags)
-- GIT_TAG=${GIT_TAG:-latest}
--	gox -os="linux windows" -arch="386 amd64 arm arm64" -output="build/mediacleaner-$GIT_TAG.{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./...
-- gox -os="darwin" -arch="386 amd64" -output="build/mediacleaner-$GIT_TAG.{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./...
-- for dir in build/* ; do tar --strip-components=1 -czvf $$dir.tar.gz $$dir && rm -rf $$dir ; done
+- "export GIT_TAG=$(git describe --tags)"
+- "export GIT_TAG=${GIT_TAG:-latest}"
+-	"gox -os="linux windows" -arch="386 amd64 arm arm64" -output="build/mediacleaner-$GIT_TAG.{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./..."
+- "gox -os='darwin' -arch='386 amd64' -output='build/mediacleaner-$GIT_TAG.{{.OS}}-{{.Arch}}/{{.Dir}}' -verbose ./..."
+- "for dir in build/* ; do tar --strip-components=1 -czvf $$dir.tar.gz $$dir && rm -rf $$dir ; done"
 
 before_deploy:
   - git config --local user.name "abates"
