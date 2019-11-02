@@ -2,19 +2,26 @@ language: go
 sudo: false
 go:
 - master
+
 before_install:
 - go get ${gobuild_args} ./...
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
 - go get github.com/mitchellh/gox
+
 script:
 - go test -coverprofile=coverage.out -coverpkg=./,./cmd/... ./...
 - "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"
-- gox -os="linux windows" -arch="386 amd64 arm arm64" -output="build/{{.OS}}/{{.Arch}}/{{.Dir}}" -verbose ./...
-- gox -os="darwin" -arch="386 amd64" -output="build/{{.OS}}/{{.Arch}}/{{.Dir}}" -verbose ./...
+- GIT_TAG=$(git describe --tags)
+- GIT_TAG=${GIT_TAG:-latest}
+-	gox -os="linux windows" -arch="386 amd64 arm arm64" -output="build/mediacleaner-$GIT_TAG.{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./...
+- gox -os="darwin" -arch="386 amd64" -output="build/mediacleaner-$GIT_TAG.{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./...
+- for dir in build/* ; do tar --strip-components=1 -czvf $$dir.tar.gz $$dir && rm -rf $$dir ; done
+
 before_deploy:
   - git config --local user.name "abates"
-  - git tag current
+  - git tag -f latest
+
 deploy:
   provider: releases
   api_key:
