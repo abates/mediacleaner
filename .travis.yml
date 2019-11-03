@@ -26,3 +26,5 @@ deploy:
   file: build/**/*
   cleanup: false
   overwrite: true
+  on:	  
+    repo: abates/mediacleaner
