@@ -7,6 +7,9 @@ endif
 build: 
 	gox -os="linux windows" -arch="386 amd64 arm arm64" -output="build/mediacleaner-$(GIT_TAG).{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./...
 	gox -os="darwin" -arch="386 amd64" -output="build/mediacleaner-$(GIT_TAG).{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./...
+
+.PHONY: dist
+dist: build
 	for dir in `ls build|grep -v tar.gz` ; do tar --strip-components=1 -czvf build/$$dir.tar.gz build/$$dir && rm -rf $$dir ; done
 
 test:
