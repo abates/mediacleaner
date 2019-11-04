@@ -8,7 +8,9 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -17,6 +19,8 @@ import (
 )
 
 var (
+	Version = "0.0.0"
+
 	YearMonthDir    = regexp.MustCompile(`^\/\d{4}\/\d{2}`)
 	YearMonthDayDir = regexp.MustCompile(`^\/\d{4}\/\d{2}\/\d{2}`)
 	FilePrefix      = regexp.MustCompile(`^\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`)
@@ -30,9 +34,10 @@ var (
 		regexp.MustCompile(`^VID_\d{8}_\d{6}`):                         "VID_20060102_150405",
 	}
 
-	ScanFlag  bool
-	WatchFlag bool
-	QuietFlag bool
+	ScanFlag    bool
+	WatchFlag   bool
+	QuietFlag   bool
+	versionFlag bool
 
 	ErrUnknownDateFormat = errors.New("Unknown date format")
 
@@ -204,6 +209,7 @@ func init() {
 	Flags.BoolVar(&QuietFlag, "q", false, "quiet - hide the progress bar")
 	Flags.BoolVar(&ScanFlag, "s", false, "scan - scan directories and process the files")
 	Flags.BoolVar(&WatchFlag, "w", false, "watch - watch for changes to the filesystem and process newly created files")
+	Flags.BoolVar(&versionFlag, "v", false, "version - display the program version and exit")
 	Flags.Usage = func() {
 		fmt.Fprintf(Flags.Output(), "Usage: %s [options] <dir1> <dir2> ...\n\nOptions:\n", os.Args[0])
 		Flags.PrintDefaults()
@@ -212,6 +218,11 @@ func init() {
 
 func Run(args []string, cb FileCallback) *Process {
 	Flags.Parse(args[1:])
+	if versionFlag {
+		fmt.Fprintf(os.Stdout, "%s version %s %s/%s\n", filepath.Base(os.Args[0]), Version, runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
+
 	if len(Flags.Args()) < 1 {
 		Flags.Usage()
 		os.Exit(1)

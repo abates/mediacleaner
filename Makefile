@@ -1,12 +1,17 @@
+
 GIT_TAG:=$(shell git describe --tags)
+VERSION:=$(GIT_TAG)
 ifeq ($(GIT_TAG),)
 	GIT_TAG:=latest
+	VERSION:=$(shell git rev-parse --verify HEAD|awk '{print substr($$0,0,7)}')
 endif
+
+OUTPUT_TPL:="build/mediacleaner-$(GIT_TAG).{{.OS}}-{{.Arch}}/{{.Dir}}"
 
 .PHONY: build
 build: 
-	gox -os="linux windows" -arch="386 amd64 arm arm64" -output="build/mediacleaner-$(GIT_TAG).{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./...
-	gox -os="darwin" -arch="386 amd64" -output="build/mediacleaner-$(GIT_TAG).{{.OS}}-{{.Arch}}/{{.Dir}}" -verbose ./...
+	gox -ldflags "-X github.com/abates/mediacleaner.Version=$(VERSION)" -os="linux windows" -arch="386 amd64 arm arm64" -output="$(OUTPUT_TPL)" -verbose ./...
+	gox -ldflags "-X github.com/abates/mediacleaner.Version=$(VERSION)" -os="darwin" -arch="386 amd64" -output="$(OUTPUT_TPL)" -verbose ./...
 
 .PHONY: dist
 dist: build
