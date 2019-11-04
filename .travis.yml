@@ -13,17 +13,19 @@ script:
 - "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"
 - make 
 
-before_deploy:
-  - git config --local user.name "abates"
-  - git tag -f latest
+#before_deploy:
+#  - git config --local user.name "abates"
+#  - git tag -f latest
 
 deploy:
   provider: releases
-  api_key:
-    secure: OWrVvy2xVWCj7PMjF517n2CTFJOa/zlvcM7IJ6sX6FfDf9GV6mzewc1JGVLCIYoRHu46WT9kAb8q0fmlg/ENWMicue+YUEM3EW+59U2QHGYCw4CDfMAY1w72bpjI+bnp7tuvAK5bQtypBGRwNB55feqc7zNOeYUX3ehrT1L5bUV2OiHaRfvgjG2bBledQ67KEylllv+B4yzu+mxBQ4vNAFncteHShenXLyI+lv3ZjWkPzAk2ERKngw3REZNVFA9GARFr7hl6tyP8uIyeCGxduxcG+3goRobO2AGw9GbbyHq5S5yaxMk9nOr3JW0Rnzfo8U68GauCPB0I9g/tvINUtnTEtDB85UQiqU/F5fHscYEGiPYdwBn1lYWPJL8Dv5MkGPwch6PLNjALaDCjoHH/pYTUEMokD2GV06wk7RIIpl6CSnD6vpMhZZXcDS0YclyvZJqVDolmoKAD7Q4SSc6MK//+4Qz0mOAduJUxFOfJqn2HbJXRb4C2GJq4WpiawSvNvleCKlaw11f3kIQ23zbgz1RFxoDLghgoKCi8iK3SC5ug59rgDdOfjmTSUr8lQMOcw1n22E3pgUrJ9tPHdc+gPv5kbYch4HUK6zLHRqUOp4FmsD8QlMKisIQJYZFiAGNCrlqaO1vybm8dw5983sNr+pQVwVsXOWFJnkm4vS4S2Kw=
+  name: latest
+  overwrite: true
+  tag_name: latest
+  skip_cleanup: true
   file_glob: true
   file: build/*.tar.gz
-  overwrite: true
-  skip_cleanup: true
+  api_key:
+    secure: OWrVvy2xVWCj7PMjF517n2CTFJOa/zlvcM7IJ6sX6FfDf9GV6mzewc1JGVLCIYoRHu46WT9kAb8q0fmlg/ENWMicue+YUEM3EW+59U2QHGYCw4CDfMAY1w72bpjI+bnp7tuvAK5bQtypBGRwNB55feqc7zNOeYUX3ehrT1L5bUV2OiHaRfvgjG2bBledQ67KEylllv+B4yzu+mxBQ4vNAFncteHShenXLyI+lv3ZjWkPzAk2ERKngw3REZNVFA9GARFr7hl6tyP8uIyeCGxduxcG+3goRobO2AGw9GbbyHq5S5yaxMk9nOr3JW0Rnzfo8U68GauCPB0I9g/tvINUtnTEtDB85UQiqU/F5fHscYEGiPYdwBn1lYWPJL8Dv5MkGPwch6PLNjALaDCjoHH/pYTUEMokD2GV06wk7RIIpl6CSnD6vpMhZZXcDS0YclyvZJqVDolmoKAD7Q4SSc6MK//+4Qz0mOAduJUxFOfJqn2HbJXRb4C2GJq4WpiawSvNvleCKlaw11f3kIQ23zbgz1RFxoDLghgoKCi8iK3SC5ug59rgDdOfjmTSUr8lQMOcw1n22E3pgUrJ9tPHdc+gPv5kbYch4HUK6zLHRqUOp4FmsD8QlMKisIQJYZFiAGNCrlqaO1vybm8dw5983sNr+pQVwVsXOWFJnkm4vS4S2Kw=
   on:	  
     repo: abates/mediacleaner
