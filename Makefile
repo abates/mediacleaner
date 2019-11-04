@@ -3,6 +3,8 @@ GIT_TAG:=$(shell git describe --tags)
 VERSION:=$(GIT_TAG)
 ifeq ($(GIT_TAG),)
 	GIT_TAG:=latest
+endif
+ifeq ($(VERSION),latest)
 	VERSION:=$(shell git rev-parse --verify HEAD|awk '{print substr($$0,0,7)}')
 endif
 
