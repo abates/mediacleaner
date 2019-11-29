@@ -18,45 +18,25 @@ import (
 )
 
 func TestErrors(t *testing.T) {
+	testErr := errors.New("test test test")
 	tests := []struct {
-		name  string
+		msg   string
 		input error
-		want  string
+		want  error
 	}{
-		{"check error", &CheckError{errors.New("test test test")}, "test test test"},
-		{"execute error", &ExecuteError{Msg: "It Failed!", Cause: errors.New("Oh woe is me")}, "It Failed!: Oh woe is me"},
+		{"job check failed", &CheckError{testErr}, testErr},
+		{"job execution failed: It Failed!", &ExecuteError{Msg: "It Failed!", Cause: testErr}, testErr},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.msg, func(t *testing.T) {
 			got := test.input.Error()
-			if test.want != got {
-				t.Errorf("Wanted error message %v got %v", test.want, got)
+			if test.msg != got {
+				t.Errorf("Wanted error message %v got %v", test.msg, got)
 			}
-		})
-	}
-}
 
-func TestWrapExecuteError(t *testing.T) {
-	tests := []struct {
-		name     string
-		inputMsg string
-		inputErr error
-		want     *ExecuteError
-	}{
-		{"nil error", "foo", nil, nil},
-		{"execute error", "foo", ErrUnknownDateFormat, &ExecuteError{Msg: "foo", Cause: ErrUnknownDateFormat}},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := WrapExecuteError(test.inputMsg, test.inputErr)
-			if got, ok := err.(*ExecuteError); ok {
-				if *test.want != *got {
-					t.Errorf("Wanted error %v got %v", test.want, got)
-				}
-			} else if err != nil {
-				t.Errorf("Wanted *ExecuteError got %T", err)
+			if !errors.Is(test.want, errors.Unwrap(test.input)) {
+				t.Errorf("Wanted %v got %v", test.want, errors.Unwrap(test.input))
 			}
 		})
 	}

@@ -77,7 +77,10 @@ func (jb *job) Execute() error {
 	}
 
 	if err == nil {
-		err = mediacleaner.WrapExecuteError(fmt.Sprintf("failed to remove %q", jb.filename), jb.fs.Remove(jb.filename))
+		err = jb.fs.Remove(jb.filename)
+		if err != nil {
+			err = &mediacleaner.ExecuteError{fmt.Sprintf("failed to remove %q", jb.filename), err}
+		}
 	} else {
 		err = &mediacleaner.ExecuteError{Msg: fmt.Sprintf("failed to transcode %q", jb.filename), Cause: err}
 	}

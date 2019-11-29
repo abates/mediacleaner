@@ -11,8 +11,50 @@ import (
 	"testing"
 
 	"github.com/abates/mediacleaner"
+	"github.com/mh-orange/cmd"
+	"github.com/mh-orange/ffmpeg"
 	"github.com/mh-orange/vfs"
 )
+
+func readFile(t *testing.T, filename, ext string) []byte {
+	for ext := filepath.Ext(filename); len(ext) > 0; ext = filepath.Ext(filename) {
+		filename = filename[0 : len(filename)-len(ext)]
+	}
+
+	content := []byte{}
+	filename = fmt.Sprintf("testdata%s.%s", filename, ext)
+	if _, err := os.Stat(filename); err == nil {
+		content, err = ioutil.ReadFile(filename)
+		if err != nil {
+			t.Logf("Failed to read file %q: %v", filename, err)
+		}
+	}
+
+	return content
+}
+
+func mockCmd(t *testing.T, input string) func() {
+	oldFfprobe := ffmpeg.Ffprobe
+	oldFfmpeg := ffmpeg.Ffmpeg
+
+	ffm := &cmd.TestCmd{
+		Stdout: readFile(t, input, "ffmpeg"),
+		Stderr: readFile(t, input, "ffmpeg_err"),
+	}
+
+	ffp := &cmd.TestCmd{
+		Stdout: readFile(t, input, "ffprobe"),
+		Stderr: readFile(t, input, "ffprobe_err"),
+	}
+
+	ffmpeg.Ffmpeg = ffm
+	ffmpeg.Ffprobe = ffp
+
+	return func() {
+		ffmpeg.Ffmpeg = oldFfmpeg
+		ffmpeg.Ffprobe = oldFfprobe
+	}
+}
 
 func TestJobCheck(t *testing.T) {
 	fs := vfs.NewOsFs("testdata")
@@ -32,6 +74,7 @@ func TestJobCheck(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
+			defer mockCmd(t, test.filename)()
 			jb := &job{fs: fs, root: "testdata/", filename: test.filename}
 			gotErr := jb.Check()
 			if ce, ok := gotErr.(*mediacleaner.CheckError); ok {
@@ -74,17 +117,17 @@ func TestJobExecute(t *testing.T) {
 	})
 
 	tests := []struct {
-		filename        string
-		wantNewFilename string
-		wantLog         string
-		wantErr         string
+		filename string
+		wantLog  string
+		wantErr  string
 	}{
-		{"/2010/01/2010_01_01_00:00:00_0003.mpg", "/2010/01/2010_01_01_00:00:00_0003.mp4", "Transcoding \"/2010/01/2010_01_01_00:00:00_0003.mpg\"\n", ""},
-		{"/2010/01/2010_01_01_00:00:00_0004.txt.gz", "", "Transcoding \"/2010/01/2010_01_01_00:00:00_0004.txt.gz\"\n", fmt.Sprintf("%v/2010/01/2010_01_01_00:00:00_0004.txt.gz: Invalid data found when processing input", tempdir)},
+		{"/2010/01/2010_01_01_00:00:00_0003.mpg", "Transcoding \"/2010/01/2010_01_01_00:00:00_0003.mpg\"\n", ""},
+		{"/2010/01/2010_01_01_00:00:00_0004.txt.gz", "Transcoding \"/2010/01/2010_01_01_00:00:00_0004.txt.gz\"\n", fmt.Sprintf("%v/2010/01/2010_01_01_00:00:00_0004.txt.gz: Invalid data found when processing input", tempdir)},
 	}
 
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
+			defer mockCmd(t, test.filename)()
 			builder := &strings.Builder{}
 			oldLogger := mediacleaner.Logger
 			mediacleaner.Logger = log.New(builder, "", 0)
@@ -107,15 +150,19 @@ func TestJobExecute(t *testing.T) {
 			}
 
 			if gotErr == nil {
-				if _, err := fs.Stat(test.wantNewFilename); err != nil {
-					t.Errorf("Wanted file to have been renamed, got %v", err)
+				// make sure original file was removed
+				if _, err := fs.Stat(test.filename); !vfs.IsNotExist(err) {
+					t.Errorf("Wanted original file to have been removed, got %v", err)
+				}
+			} else {
+				// make sure original file still exists
+				if _, err := fs.Stat(test.filename); err != nil {
+					t.Errorf("Wanted original file still exist, got %v", err)
 				}
 
-				if _, err := fs.Stat(test.filename); !vfs.IsNotExist(err) {
-					t.Errorf("Wanted file to have been renamed, got %v", err)
+				if test.wantErr != gotErr.Error() {
+					t.Errorf("Wanted error %q got %q", test.wantErr, gotErr.Error())
 				}
-			} else if test.wantErr != gotErr.Error() {
-				t.Errorf("Wanted error %q got %q", test.wantErr, gotErr.Error())
 			}
 		})
 	}

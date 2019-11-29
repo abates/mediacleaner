@@ -1,0 +1,34 @@
+language: go
+go:
+- master
+
+before_install:
+  - go get ${gobuild_args} ./...
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
+  - go get github.com/mitchellh/gox
+
+script:
+  - go test -coverprofile=coverage.out -coverpkg=./,./cmd/... ./...
+  - "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci"
+
+before_deploy:
+  - export TRAVIS_TAG=${TRAVIS_TAG:-latest}
+  - git tag -f $TRAVIS_TAG
+  - git remote add gh https://${TRAVIS_REPO_SLUG%/*}:${GITHUB_API_KEY}@github.com/${TRAVIS_REPO_SLUG}.git
+  - git push -f gh $TRAVIS_TAG
+  - git remote remove gh
+  - make dist
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_API_KEY
+  skip_cleanup: true
+  name: latest
+  overwrite: true
+  tag_name: latest
+  file_glob: true
+  file: build/*.tar.gz
+  target_commitish: $TRAVIS_COMMIT
+  on:	  
+    branch: master
