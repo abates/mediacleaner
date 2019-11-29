@@ -3,7 +3,7 @@ module github.com/abates/mediacleaner
 go 1.12
 
 require (
-	github.com/abates/goexiftool v0.0.0-20190724154643-3c2c1397b270
+	github.com/abates/goexiftool v0.0.0-20191008011202-789002dc23b3
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect

@@ -1,5 +1,11 @@
 github.com/abates/goexiftool v0.0.0-20190724154643-3c2c1397b270 h1:zDUNL4hhfAenOaZu+eBz9mz0emH5ZgUuLqL+ILmI5sg=
 github.com/abates/goexiftool v0.0.0-20190724154643-3c2c1397b270/go.mod h1:aHlx0GOUaaagt9XW6o+Il1Mp6MMaOHpSHYsXgUyQPbM=
+github.com/abates/goexiftool v0.0.0-20191008010321-637c55a6bd4a h1:Fg+0moynQ7gI7bCCgOFPbIWvG5KQfeqFdp/ZXpEevZQ=
+github.com/abates/goexiftool v0.0.0-20191008010321-637c55a6bd4a/go.mod h1:aHlx0GOUaaagt9XW6o+Il1Mp6MMaOHpSHYsXgUyQPbM=
+github.com/abates/goexiftool v0.0.0-20191008011034-3f3823aa74ff h1:LzecotoRKOErpQILBf7hRCV/XottueXPmEJzNY3PxCw=
+github.com/abates/goexiftool v0.0.0-20191008011034-3f3823aa74ff/go.mod h1:aHlx0GOUaaagt9XW6o+Il1Mp6MMaOHpSHYsXgUyQPbM=
+github.com/abates/goexiftool v0.0.0-20191008011202-789002dc23b3 h1:TtUAuB7fnHuSnt6AWp5lQcPUVF9nqLZSkHXRpDtBYTk=
+github.com/abates/goexiftool v0.0.0-20191008011202-789002dc23b3/go.mod h1:aHlx0GOUaaagt9XW6o+Il1Mp6MMaOHpSHYsXgUyQPbM=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
