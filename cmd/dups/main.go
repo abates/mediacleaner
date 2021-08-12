@@ -2,16 +2,35 @@ package main
 
 import (
 	"crypto/sha256"
+	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 var (
-	images map[[sha256.Size]byte][]string
+	images  map[[sha256.Size]byte][]string
+	remove  bool
+	rename  bool
+	verbose bool
 )
+
+func init() {
+	flag.BoolVar(&remove, "remove", false, "remove duplicate files")
+	flag.BoolVar(&rename, "rename", false, "rename duplicate files")
+	flag.BoolVar(&verbose, "verbose", false, "print verbose log")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage:\n")
+		fmt.Fprintf(os.Stderr, "%s [-remove] [-rename] <path>\n", os.Args[0])
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "Either -remove or -rename must be specified, but not both\n")
+	}
+}
 
 func analyze(path string, info os.FileInfo, err error) error {
 	if err != nil {
@@ -24,8 +43,8 @@ func analyze(path string, info os.FileInfo, err error) error {
 		}
 		return nil
 	}
+	log.Printf("Analyzing %q", path)
 
-	fmt.Printf("Reading %s\n", path)
 	file, err := os.Open(path)
 	if err == nil {
 		digest := sha256.New()
@@ -34,10 +53,18 @@ func analyze(path string, info os.FileInfo, err error) error {
 			var hash [sha256.Size]byte
 			copy(hash[:], digest.Sum(nil))
 			if dupfiles, found := images[hash]; found {
-				dupdir := fmt.Sprintf("%s_dups", dupfiles[0])
-				err = os.MkdirAll(dupdir, 0750)
-				if err == nil {
-					err = os.Rename(path, filepath.Join(dupdir, filepath.Base(path)))
+				log.Printf("%q is a duplicate of %q", path, dupfiles[0])
+				if rename {
+					dupdir := fmt.Sprintf("%s_dups", dupfiles[0])
+					err = os.MkdirAll(dupdir, 0750)
+					if err == nil {
+						newpath := filepath.Join(dupdir, filepath.Base(path))
+						log.Printf("Renaming %q to %q", path, newpath)
+						err = os.Rename(path, newpath)
+					}
+				} else if remove {
+					log.Printf("Removing %q", path)
+					err = os.Remove(path)
 				}
 			}
 			images[hash] = append(images[hash], path)
@@ -48,14 +75,21 @@ func analyze(path string, info os.FileInfo, err error) error {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "usage: %s <path>\n", os.Args[0])
+	flag.Parse()
+	if len(flag.Args()) < 1 {
+		flag.Usage()
 		os.Exit(-1)
 	}
 
+	if !verbose {
+		log.SetOutput(ioutil.Discard)
+	}
+
+	inputPath := flag.Args()[0]
+
 	images = make(map[[sha256.Size]byte][]string)
 
-	err := filepath.Walk(os.Args[1], analyze)
+	err := filepath.Walk(inputPath, analyze)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAILURE: %v", err)
 		os.Exit(-1)
@@ -63,9 +97,9 @@ func main() {
 
 	for _, files := range images {
 		if len(files) > 1 {
-			fmt.Printf("Duplicates:\n")
+			log.Printf("Duplicates:\n")
 			for _, file := range files {
-				fmt.Printf("\t%s\n", file)
+				log.Printf("\t%s\n", file)
 			}
 		}
 	}
