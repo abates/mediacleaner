@@ -1,6 +1,7 @@
 module github.com/abates/mediacleaner
 
 require (
+	github.com/abates/goexiftool v0.0.0-20191101174916-139ad7211501
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect

@@ -26,12 +26,13 @@ var (
 	FilePrefix      = regexp.MustCompile(`^\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`)
 
 	filePrefixes = map[*regexp.Regexp]string{
-		regexp.MustCompile(`^\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`):     "2006_01_02_15:04:05",
-		regexp.MustCompile(`^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}`):     "2006-01-02_15-04-05",
-		regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\s+\d{2}\.\d{2}\.\d{2}`): "2006-01-02 15.04.05",
-		regexp.MustCompile(`^\d{8}_\d{6}`):                             "20060102_150405",
-		regexp.MustCompile(`^IMG_\d{8}_\d{6}`):                         "IMG_20060102_150405",
-		regexp.MustCompile(`^VID_\d{8}_\d{6}`):                         "VID_20060102_150405",
+		regexp.MustCompile(`^video-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}`): "video-2006-01-02-15-04-05",
+		regexp.MustCompile(`^\d{4}_\d{2}_\d{2}_\d{2}:\d{2}:\d{2}`):       "2006_01_02_15:04:05",
+		regexp.MustCompile(`^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}`):       "2006-01-02_15-04-05",
+		regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\s+\d{2}\.\d{2}\.\d{2}`):   "2006-01-02 15.04.05",
+		regexp.MustCompile(`^\d{8}_\d{6}`):                               "20060102_150405",
+		regexp.MustCompile(`^IMG_\d{8}_\d{6}`):                           "IMG_20060102_150405",
+		regexp.MustCompile(`^VID_\d{8}_\d{6}`):                           "VID_20060102_150405",
 	}
 
 	ScanFlag    bool
@@ -160,7 +161,7 @@ func (p *Process) process(queue <-chan Job) {
 					Errorf("Failed to process %s: %v", job.Name(), err)
 				}
 			} else if errors.As(err, &ce) {
-				Infof("Skipping %s: %v", job.Name(), err)
+				Infof("Skipping %s: %v", job.Name(), errors.Unwrap(err))
 			} else {
 				Errorf("Failed to perform checks on %s: %v", job.Name(), err)
 			}

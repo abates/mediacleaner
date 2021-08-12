@@ -17,6 +17,8 @@ var (
 	errIsDir            = errors.New("File is a directory")
 	errNoExifDate       = errors.New("Exif data has no known date")
 	errAlreadyProcessed = errors.New("File has already been processed")
+
+	skipFlag = false
 )
 
 type job struct {
@@ -82,6 +84,10 @@ func (jb *job) Execute() error {
 		err = &mediacleaner.ExecuteError{fmt.Sprintf("failed creating directory %q", jb.newDir), err}
 	}
 	return err
+}
+
+func init() {
+	mediacleaner.Flags.BoolVar(&skipFlag, "i", false, "ignore - ignore filenames that don't match a known pattern")
 }
 
 func main() {
